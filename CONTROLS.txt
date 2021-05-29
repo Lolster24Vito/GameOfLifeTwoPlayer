@@ -1,0 +1,7 @@
+
+Left Click -	Put down cell
+Right click-	Delete Cell
+Space	   -	Unfreze/Freeze Time
+
+C	   -	Clear grid
+R	   -	Randomize grid
