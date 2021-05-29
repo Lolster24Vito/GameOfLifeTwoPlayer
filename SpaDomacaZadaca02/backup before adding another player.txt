@@ -1,0 +1,236 @@
+#include <SFML/Graphics.hpp>
+#include<ctime>
+#include<iostream>
+
+#include <SFML/Audio.hpp>
+#include <string>
+#include<SFML/Audio/SoundBuffer.hpp>
+
+
+const int cellSize = 10;
+const int height = 600;
+const int width = 1000;
+const int gridHeight = height / cellSize;
+const int gridWidth = width / cellSize;
+
+int genRnd(int min, int max) {
+	return rand() % (max - min + 1) + min;
+}
+struct vector2 {
+	int x;
+	int y;
+	vector2(int x, int y) {
+		this->x = x;
+		this->y = y;
+	}
+	vector2() {
+		this->x = 0;
+		this->y = 0;
+	}
+};
+enum CellState { dead, aliveP1, aliveP2 };
+
+
+sf::Color randomColor() {
+	int r = genRnd(0, 255);
+	int g = genRnd(0, 255);
+	int b = genRnd(0, 255);
+
+	return sf::Color(r, g, b);
+}
+
+
+
+int main()
+{
+	//	buffer.loadFromSamples(&samples[0], samples.size(), 2, 44100);
+	//if (!buffer.loadFromFile("sound.wav"))
+	//	return -1;
+
+	sf::Color colors[2] = { sf::Color(0,0,0),sf::Color(255,255,255) };
+	sf::RenderWindow window(sf::VideoMode(width, height), "Hello, SFML world!");
+	window.setFramerateLimit(60);
+	bool freezeTime = true;
+	bool leftMouseButtonHolding = false;
+	bool rightMouseButtonHolding = false;
+	//Cvijet cvijet(&window);
+	srand(time(nullptr));
+	bool grid[gridWidth][gridHeight];
+	//sf::SoundBuffer buffer;
+
+	for (int i = 0; i < gridWidth; i++) {
+		for (int j = 0; j < gridHeight; j++) {
+		//	grid[i][j] = genRnd(0, 1);
+			grid[i][j] = 0;
+		}
+	}
+
+	window.clear();
+
+	for (int i = 0; i < gridWidth; i++) {
+		for (int j = 0; j < gridHeight; j++) {
+			//if (grid[i][j]) {
+			sf::RectangleShape rectangle(sf::Vector2f(cellSize, cellSize));
+			rectangle.setPosition(i * cellSize, j * cellSize);
+
+			rectangle.setFillColor(colors[grid[i][j]]);
+
+			window.draw(rectangle);
+			//}
+		}
+
+	}
+	window.display();
+
+
+	
+
+	while (window.isOpen())
+	{
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == sf::Event::Closed)
+				window.close();
+			if (event.type == event.KeyPressed) {
+				if (event.key.code == sf::Keyboard::Space) {
+					freezeTime = !freezeTime;
+				}
+			}
+			if (event.type == sf::Event::MouseButtonPressed)
+			{
+				if (event.mouseButton.button == sf::Mouse::Left)
+				{
+					leftMouseButtonHolding = true;
+				}
+				if (event.mouseButton.button == sf::Mouse::Right)
+				{
+					rightMouseButtonHolding = true;
+				}
+			}
+			if (event.type == sf::Event::MouseButtonReleased) {
+				if (event.mouseButton.button == sf::Mouse::Left)
+				{
+					leftMouseButtonHolding = false;
+				}
+				if (event.mouseButton.button == sf::Mouse::Right)
+				{
+					rightMouseButtonHolding = false;
+				}
+
+			}
+			if (event.type == sf::Event::MouseMoved) {
+				vector2 gridPositions(event.mouseMove.x / cellSize, event.mouseMove.y / cellSize);
+				if (leftMouseButtonHolding) {
+					grid[gridPositions.x][gridPositions.y] = true;
+				}
+				if (rightMouseButtonHolding) {
+					grid[gridPositions.x][gridPositions.y] = false;
+				}
+			}
+			
+		}
+
+
+		
+			window.clear();
+			//cvijet.draw();
+
+
+
+
+			for (int i = 0; i < gridWidth; i++) {
+				for (int j = 0; j < gridHeight; j++) {
+					//if (grid[i][j]) {
+					sf::RectangleShape rectangle(sf::Vector2f(cellSize, cellSize));
+					rectangle.setPosition(i * cellSize, j * cellSize);
+					if (grid[i][j]) {
+						rectangle.setFillColor(sf::Color::White);
+					}
+					else {
+						rectangle.setFillColor(sf::Color::Black);
+					}
+					window.draw(rectangle);
+					//}
+				}
+
+			}
+			window.display();
+			if (!freezeTime) {
+
+			bool nextGrid[gridWidth][gridHeight];
+			for (int i = 0; i < gridWidth; i++) {
+				for (int j = 0; j < gridHeight; j++) {
+					int counter = 0;
+					vector2 verticalCheckMinMax(-1, 1);
+					vector2 horizontalCheckMinMax(-1, 1);
+					//sf::Vector2 heighthMinMax;
+					if (i == 0) {
+						horizontalCheckMinMax.x = 0;
+					}
+					if (i == gridWidth - 1) {
+						horizontalCheckMinMax.y = 0;
+					}
+					if (j == 0) {
+						verticalCheckMinMax.x = 0;
+					}
+					if (j == gridHeight - 1) {
+						verticalCheckMinMax.y = 0;
+					}
+					for (int m = horizontalCheckMinMax.x; m <= horizontalCheckMinMax.y; m++) {
+						for (int l = verticalCheckMinMax.x; l <= verticalCheckMinMax.y; l++) {
+							if (m == 0 && l == 0) continue;
+							if (grid[m + i][l + j]) {
+								counter++;
+							}
+						}
+					}
+
+					if (grid[i][j]) {
+						if (counter < 2) {
+							nextGrid[i][j] = false;
+							//std::cout << "died less than 2-";
+						}
+						if (counter > 3) {
+							nextGrid[i][j] = false;
+							//std::cout << "died more  than 3-";
+						}
+						if (counter == 2 || counter == 3) {
+							nextGrid[i][j] = true;
+							//std::cout << "continued to live-";
+						}
+
+					}
+					else {
+						if (counter == 3) {
+							nextGrid[i][j] = true;
+							//std::cout << "came alive from dead--";
+
+						}
+						else 	
+						nextGrid[i][j] = false;
+						//std::cout << "still dead-";
+
+
+					}
+					//std::cout << " [" << i << "," << j << "]:" << counter << "\n";
+
+
+
+				}
+			}
+			for (int i = 0; i < gridWidth; i++) {
+				for (int j = 0; j < gridHeight; j++) {
+					grid[i][j] = nextGrid[i][j];
+				}
+			}
+
+
+			//window.draw(rectangle);
+
+
+		}
+	}
+
+	return 0;
+}
